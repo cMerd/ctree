@@ -94,21 +94,21 @@ public:
 
       std::cout << prefix << pointers[0];
       if (entry.is_directory()) {
-        std::cout << "\033[34;1m";
-      }
-      std::cout << entry.path().filename().string();
-      if (entry.is_directory()) {
-        std::cout << ' ' << icons["directory"];
+        std::cout << icons["directory"];
       } else if (entry.is_symlink()) {
-        std::cout << ' ' << icons["symlink"];
+        std::cout << icons["symlink"];
       } else if (entry.is_regular_file()) {
         if (icons.find(entry.path().extension()) != icons.end()) {
-          std::cout << ' ' << icons[entry.path().extension()];
+          std::cout << icons[entry.path().extension()];
         } else {
-          std::cout << ' ' << icons["other"];
+          std::cout << icons["other"];
         }
       }
 
+      if (entry.is_directory()) {
+        std::cout << "\033[34;1m";
+      }
+      std::cout << ' ' << entry.path().filename().string();
       std::cout << '\n';
 
       if (!entry.is_directory()) {
