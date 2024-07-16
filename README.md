@@ -12,7 +12,7 @@ sudo cp ctree /bin/ctree
 # Usage
 ```bash
 > ctree --help
-ctree: v 0.1.1
+ctree: v 0.1.2
 Shows a tree of files.
 Arguments: 
         -h, --help: show this help menu
