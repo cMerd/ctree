@@ -6,7 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-constexpr char version[] = "ctree: v 0.1.1";
+constexpr char version[] = "ctree: v 0.1.2";
 
 struct args {
   bool showHidden = false;
