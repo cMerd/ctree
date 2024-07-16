@@ -140,7 +140,11 @@ public:
 
           std::cout << prefix << pointers.first;
           if (entry.is_directory()) {
-            std::cout << icons.at("directory");
+            if (entry.path().filename().string() == ".git") {
+              std::cout << icons.at(".git");
+            } else {
+              std::cout << icons.at("directory");
+            }
           } else if (entry.is_symlink()) {
             std::cout << icons.at("symlink");
           } else if (entry.is_regular_file()) {
@@ -161,6 +165,8 @@ public:
                        entry.path().filename().string().find("Makefile") !=
                            std::string::npos) {
               std::cout << icons.at("makefile");
+            } else if (entry.path().filename().string() == ".gitignore") {
+              std::cout << icons.at(".gitignore");
             } else if (icons.find(entry.path().extension()) != icons.end()) {
               std::cout << icons.at(entry.path().extension());
             } else {
