@@ -19,13 +19,13 @@ struct args {
       std::string arg = argv[i];
       if (arg == "-h" or arg == "--help") {
         std::cout << version << '\n';
-        std::cout << "Shows a tree of files.\n";
+        std::cout << "Shows a \033[32;1m󰔱 tree\033[0m of files.\n";
         std::cout << "Arguments: \n";
-        std::cout << "\t-h, --help: show this help menu\n";
-        std::cout << "\t-v, --version: show version\n";
-        std::cout << "\t-s, --show-hidden: show hidden files too\n";
-        std::cout << "\t-u, --unsort: don't sort files by name\n";
-        std::cout << "\t-m, --summary: show number of files and directories\n";
+        std::cout << "\t\033[34m󰋖\033[0m -h, --help: show this help menu\n";
+        std::cout << "\t\033[31m\033[0m -v, --version: show version\n";
+        std::cout << "\t\033[36m󰘓\033[0m -s, --show-hidden: show hidden files too\n";
+        std::cout << "\t󰒺 -u, --unsort: don't sort files by name\n";
+        std::cout << "\t󰉻 -m, --summary: show number of files and directories\n";
         exit(0);
       } else if (arg == "-v" or arg == "--version") {
         std::cout << version << '\n';
