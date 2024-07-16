@@ -1,14 +1,14 @@
 #include <algorithm>
 #include <filesystem>
+#include <functional>
 #include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
-constexpr char version[] = "ctree: v 0.1.0";
+constexpr char version[] = "ctree: v 0.1.1";
 
-class args {
-public:
+struct args {
   bool showHidden = false;
   bool unsort = false;
   bool summary = false;
@@ -43,13 +43,11 @@ public:
       }
     }
   }
-
-private:
 };
 
 class ctree {
 private:
-  std::unordered_map<std::string, std::string> icons = {
+  const std::unordered_map<std::string, std::string> icons = {
       {".c", "\033[34m\033[0m"},    {".cpp", "\033[34m\033[0m"},
       {".html", "\033[33m\033[0m"}, {".css", "\033[34m\033[0m"},
       {".js", "\033[33m\033[0m"},   {".py", "\033[36m\033[0m"},
@@ -73,8 +71,10 @@ private:
   size_t dirs = 0;
   size_t files = 0;
 
-  std::pair<std::string, std::string> inner_pointers = {"├── ", "│   "};
-  std::pair<std::string, std::string> final_pointers = {"└── ", "    "};
+  static constexpr std::pair<const char *, const char *> inner_pointers = {
+      "├── ", "│   "};
+  static constexpr std::pair<const char *, const char *> final_pointers = {
+      "└── ", "    "};
 
 public:
   void walk(const std::string &directory, const std::string &prefix,
@@ -82,7 +82,8 @@ public:
     std::vector<std::filesystem::directory_entry> entries;
 
     if (!argv.unsort) {
-      for (const auto &entry : std::filesystem::directory_iterator(directory)) {
+      for (const std::filesystem::directory_entry &entry :
+           std::filesystem::directory_iterator(directory)) {
         entries.push_back(entry);
       }
 
@@ -94,51 +95,57 @@ public:
     }
 
     size_t index = 0;
-    auto loopLogic = [&](const std::filesystem::directory_entry &entry,
-                         size_t numberOfEntries) {
-      if (!argv.showHidden and
-          entry.path().filename().string().front() == '.') {
-        return;
-      }
-      index++;
-      std::pair<std::string, std::string> pointers =
-          index == numberOfEntries ? final_pointers : inner_pointers;
+    std::function<void(const std::filesystem::directory_entry &, size_t)>
+        loopLogic = [&](const std::filesystem::directory_entry &entry,
+                        size_t numberOfEntries) {
+          if (!argv.showHidden and
+              entry.path().filename().string().front() == '.') {
+            return;
+          }
+          index++;
+          std::pair<std::string, std::string> pointers =
+              index == numberOfEntries ? final_pointers : inner_pointers;
 
-      std::cout << prefix << pointers.first;
-      if (entry.is_directory()) {
-        std::cout << icons["directory"];
-      } else if (entry.is_symlink()) {
-        std::cout << icons["symlink"];
-      } else if (entry.is_regular_file()) {
-        if (entry.path().filename().string().find("readme") !=
-                std::string::npos or
-            entry.path().filename().string().find("README") !=
-                std::string::npos) {
-          std::cout << icons["readme"];
-        } else if (entry.path().filename().string().find("license") !=
-                       std::string::npos or
-                   entry.path().filename().string().find("LICENSE") !=
-                       std::string::npos) {
-          std::cout << icons["license"];
-        } else if (icons.find(entry.path().extension()) != icons.end()) {
-          std::cout << icons[entry.path().extension()];
-        } else {
-          std::cout << icons["other"];
-        }
-      }
+          std::cout << prefix << pointers.first;
+          if (entry.is_directory()) {
+            std::cout << icons.at("directory");
+          } else if (entry.is_symlink()) {
+            std::cout << icons.at("symlink");
+          } else if (entry.is_regular_file()) {
+            if (entry.path().filename().string().find("readme") !=
+                    std::string::npos or
+                entry.path().filename().string().find("README") !=
+                    std::string::npos) {
+              std::cout << icons.at("readme");
+            } else if (entry.path().filename().string().find("license") !=
+                           std::string::npos or
+                       entry.path().filename().string().find("LICENSE") !=
+                           std::string::npos) {
+              std::cout << icons.at("license");
+            } else if (icons.find(entry.path().extension()) != icons.end()) {
+              std::cout << icons.at(entry.path().extension());
+            } else {
+              std::cout << icons.at("other");
+            }
+          }
 
-      if (entry.is_directory()) {
-        std::cout << "\033[34;1m";
-      }
-      std::cout << ' ' << entry.path().filename().string() << "\033[0m\n";
+          if (entry.is_directory()) {
+            std::cout << "\033[34;1m";
+          }
+          std::cout << ' ' << entry.path().filename().string() << "\033[0m\n";
 
-      if (!entry.is_directory()) {
-        files++;
-      } else {
-        dirs++;
-        walk(entry.path(), prefix + pointers.second, argv);
-      }
-    };
+          if (!entry.is_directory()) {
+            files++;
+          } else {
+            dirs++;
+            walk(entry.path(), prefix + pointers.second, argv);
+          }
+        };
+
+    std::function<bool(const std::filesystem::directory_entry &)> isNotHidden =
+        [](const std::filesystem::directory_entry &e) {
+          return e.path().filename().string().front() != '.';
+        };
 
     if (argv.unsort) {
       for (const std::filesystem::directory_entry &entry :
@@ -148,29 +155,22 @@ public:
             (argv.showHidden
                  ? std::distance(std::filesystem::directory_iterator(directory),
                                  std::filesystem::directory_iterator())
-                 : std::count_if(
-                       std::filesystem::directory_iterator(directory),
-                       std::filesystem::directory_iterator(),
-                       [](const std::filesystem::directory_entry &e) {
-                         return e.path().filename().string().front() != '.';
-                       })));
+                 : std::count_if(std::filesystem::directory_iterator(directory),
+                                 std::filesystem::directory_iterator(),
+                                 isNotHidden)));
       }
       return;
     }
 
     for (const std::filesystem::directory_entry &entry : entries) {
       loopLogic(entry,
-                (argv.showHidden
-                     ? entries.size()
-                     : std::count_if(
-                           entries.begin(), entries.end(),
-                           [](const std::filesystem::directory_entry &e) {
-                             return e.path().filename().string().front() != '.';
-                           })));
+                (argv.showHidden ? entries.size()
+                                 : std::count_if(entries.begin(), entries.end(),
+                                                 isNotHidden)));
     }
   }
 
-  void summary() {
+  void summary() const {
     std::cout << "\n"
               << dirs << " directories,"
               << " " << files << " files\n";
@@ -194,6 +194,7 @@ int main(int argc, char *argv[]) {
     tree.walk(arg.dir, "", arg);
   } catch (const std::exception &e) {
     std::cout << e.what() << '\n';
+    return 2;
   }
 
   if (arg.summary) {
