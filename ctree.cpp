@@ -9,8 +9,6 @@ constexpr char version[] = "ctree: v 0.1.0";
 
 class args {
 public:
-  bool help = false;
-  bool version = false;
   bool showHidden = false;
   bool unsort = false;
   bool summary = false;
@@ -187,14 +185,6 @@ int main(int argc, char *argv[]) {
   } catch (const std::exception &e) {
     std::cerr << e.what() << '\n';
     return 1;
-  }
-
-  if (arg.version) {
-    return 0;
-  }
-
-  if (arg.help) {
-    return 0;
   }
 
   ctree tree;
