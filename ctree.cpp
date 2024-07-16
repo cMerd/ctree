@@ -177,13 +177,31 @@ public:
           if (entry.is_directory()) {
             std::cout << "\033[34;1m";
           }
-          std::cout << ' ' << entry.path().filename().string() << "\033[0m\n";
+          std::cout << ' ' << entry.path().filename().string();
+
+          try {
+            if (entry.is_symlink() and entry.exists()) {
+              std::filesystem::path target =
+                  std::filesystem::read_symlink(entry.path());
+              if (target.is_relative()) {
+                target = std::filesystem::absolute(entry.path().parent_path() /
+                                                   target);
+              }
+              std::cout << "  " << target.string();
+            }
+          } catch (...) {
+            std::cout << "  (symlink recursion error)\n";
+          }
+
+          std::cout << "\033[0m\n";
 
           if (!entry.is_directory()) {
             files++;
           } else {
             dirs++;
-            walk(entry.path(), prefix + pointers.second, argv);
+            if (!entry.is_symlink()) {
+              walk(entry.path(), prefix + pointers.second, argv);
+            }
           }
         };
 
