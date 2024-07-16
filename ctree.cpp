@@ -23,9 +23,11 @@ struct args {
         std::cout << "Arguments: \n";
         std::cout << "\t\033[34m󰋖\033[0m -h, --help: show this help menu\n";
         std::cout << "\t\033[31m\033[0m -v, --version: show version\n";
-        std::cout << "\t\033[36m󰘓\033[0m -s, --show-hidden: show hidden files too\n";
+        std::cout << "\t\033[36m󰘓\033[0m -s, --show-hidden: show hidden "
+                     "files too\n";
         std::cout << "\t󰒺 -u, --unsort: don't sort files by name\n";
-        std::cout << "\t󰉻 -m, --summary: show number of files and directories\n";
+        std::cout
+            << "\t󰉻 -m, --summary: show number of files and directories\n";
         exit(0);
       } else if (arg == "-v" or arg == "--version") {
         std::cout << version << '\n';
@@ -48,24 +50,54 @@ struct args {
 class ctree {
 private:
   const std::unordered_map<std::string, std::string> icons = {
-      {".c", "\033[34m\033[0m"},    {".cpp", "\033[34m\033[0m"},
-      {".html", "\033[33m\033[0m"}, {".css", "\033[34m\033[0m"},
-      {".js", "\033[33m\033[0m"},   {".py", "\033[36m\033[0m"},
-      {".sh", "\033[0m"},           {".java", "\033[0m"},
-      {".ino", "\033[34m\033[0m"},  {".rs", "\033[33m\033[0m"},
-      {".go", "\033[36m\033[0m"},   {".txt", "\033[0m"},
-      {".png", "\033[0m"},          {".jpg", "\033[0m"},
-      {".jpeg", "\033[0m"},         {".gif", "󰵸\033[0m"},
-      {".mp4", "\033[0m"},          {".mov", "\033[0m"},
-      {".mp3", "\033[0m"},          {".xfc", "\033[0m"},
-      {".zip", "󰛫\033[0m"},         {".gz", "󰛫\033[0m"},
-      {".o", "󰆧\033[0m"},           {".obj", "󰆧\033[0m"},
-      {".out", "\033[0m"},          {"", "\033[0m"},
-      {".bin", "\033[0m"},          {".h", "\033[35m\033[0m"},
-      {".hpp", "\033[35m\033[0m"},  {".pdf", "\033[31m\033[0m"},
-      {".md", "\033[36m\033[0m"},   {"directory", "\033[34;1m\033[0m"},
-      {"other", "\033[1m\033[0m"},  {"symlink", "\033[1m\033[0m"},
-      {"readme", "\033[1m\033[0m"}, {"license", "\033[33;1m󰿃\033[0m"},
+      {".c", "\033[34m\033[0m"},
+      {".cpp", "\033[34m\033[0m"},
+      {".cc", "\033[34m\033[0m"},
+      {".html", "\033[33m\033[0m"},
+      {".css", "\033[34m\033[0m"},
+      {".js", "\033[33m\033[0m"},
+      {".py", "\033[36m\033[0m"},
+      {".sh", "\033[0m"},
+      {".java", "\033[0m"},
+      {".ino", "\033[34m\033[0m"},
+      {".rs", "\033[33m\033[0m"},
+      {".go", "\033[36m\033[0m"},
+      {".txt", "\033[0m"},
+      {".png", "\033[0m"},
+      {".jpg", "\033[0m"},
+      {".jpeg", "\033[0m"},
+      {".gif", "󰵸\033[0m"},
+      {".mp4", "\033[0m"},
+      {".mov", "\033[0m"},
+      {".mp3", "\033[0m"},
+      {".wav", "\033[0m"},
+      {".dll", "\033[34m󰏖\033[0m"},
+      {".a", "\033[34m󰏖\033[0m"},
+      {".xfc", "\033[0m"},
+      {".zip", "󰛫\033[0m"},
+      {".gz", "󰛫\033[0m"},
+      {".o", "󰆧\033[0m"},
+      {".obj", "󰆧\033[0m"},
+      {".out", "\033[0m"},
+      {"", "\033[0m"},
+      {".bin", "\033[0m"},
+      {".h", "\033[35m\033[0m"},
+      {".hpp", "\033[35m\033[0m"},
+      {".pdf", "\033[31m\033[0m"},
+      {".md", "\033[36m\033[0m"},
+      {".otf", "\033[0m"},
+      {".desktop", "\033[0m"},
+      {".json", "\033[33m\033[0m"},
+      {".log", "\033[0m"},
+      {".sln", "\033[35m󰘐\033[0m"},
+      {"directory", "\033[34;1m\033[0m"},
+      {"other", "\033[1m\033[0m"},
+      {"symlink", "\033[1m\033[0m"},
+      {"readme", "\033[1m\033[0m"},
+      {"license", "\033[33;1m󰿃\033[0m"},
+      {"makefile", "\033[33;1m\033[0m"},
+      {".gitignore", "\033[31m\033[0m"},
+      {".git", "\033[31m\033[0m"},
   };
 
   size_t dirs = 0;
@@ -122,6 +154,13 @@ public:
                        entry.path().filename().string().find("LICENSE") !=
                            std::string::npos) {
               std::cout << icons.at("license");
+            } else if (entry.path().filename().string().find("makefile") !=
+                           std::string::npos or
+                       entry.path().filename().string().find("MAKEFILE") !=
+                           std::string::npos or
+                       entry.path().filename().string().find("Makefile") !=
+                           std::string::npos) {
+              std::cout << icons.at("makefile");
             } else if (icons.find(entry.path().extension()) != icons.end()) {
               std::cout << icons.at(entry.path().extension());
             } else {
