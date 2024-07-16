@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
+constexpr char version[] = "ctree: v 0.1.0";
+
 class args {
 public:
   bool help = false;
@@ -18,9 +20,18 @@ public:
     for (int i = 1; i < argc; i++) {
       std::string arg = argv[i];
       if (arg == "-h" or arg == "--help") {
-        help = true;
+        std::cout << version << '\n';
+        std::cout << "Shows a tree of files.\n";
+        std::cout << "Arguments: \n";
+        std::cout << "\t-h, --help: show this help menu\n";
+        std::cout << "\t-v, --version: show version\n";
+        std::cout << "\t-s, --show-hidden: show hidden files too\n";
+        std::cout << "\t-u, --unsort: don't sort files by name\n";
+        std::cout << "\t-m, --summary: show number of files and directories\n";
+        exit(0);
       } else if (arg == "-v" or arg == "--version") {
-        version = true;
+        std::cout << version << '\n';
+        exit(0);
       } else if (arg == "-s" or arg == "--show-hidden") {
         showHidden = true;
       } else if (arg == "-u" or arg == "--unsort") {
@@ -55,31 +66,28 @@ private:
       {".o", "󰆧\033[0m"},           {".obj", "󰆧\033[0m"},
       {".out", "\033[0m"},          {"", "\033[0m"},
       {".bin", "\033[0m"},          {".h", "\033[35m\033[0m"},
-      {".hpp", "\033[35m\033[0m"},  {"directory", "\033[34;1m\033[0m"},
-      {"other", "\033[1m\033[0m"},  {"symlink", "\033[0m"}};
+      {".hpp", "\033[35m\033[0m"},  {".pdf", "\033[31m\033[0m"},
+      {".md", "\033[36m\033[0m"},   {"directory", "\033[34;1m\033[0m"},
+      {"other", "\033[1m\033[0m"},  {"symlink", "\033[1m\033[0m"},
+      {"readme", "\033[1m\033[0m"}, {"license", "\033[33;1m󰿃\033[0m"},
+  };
 
   size_t dirs = 0;
   size_t files = 0;
 
-  std::vector<std::string> inner_pointers = {"├── ", "│   "};
-  std::vector<std::string> final_pointers = {"└── ", "    "};
+  std::pair<std::string, std::string> inner_pointers = {"├── ", "│   "};
+  std::pair<std::string, std::string> final_pointers = {"└── ", "    "};
 
 public:
   void walk(const std::string &directory, const std::string &prefix,
             const args &argv) {
     std::vector<std::filesystem::directory_entry> entries;
 
-    for (const auto &entry : std::filesystem::directory_iterator(directory)) {
-      if (argv.showHidden) {
-        entries.push_back(entry);
-        continue;
-      }
-      if (entry.path().filename().string()[0] != '.') {
-        entries.push_back(entry);
-      }
-    }
-
     if (!argv.unsort) {
+      for (const auto &entry : std::filesystem::directory_iterator(directory)) {
+        entries.push_back(entry);
+      }
+
       std::sort(entries.begin(), entries.end(),
                 [](const std::filesystem::directory_entry &left,
                    const std::filesystem::directory_entry &right) -> bool {
@@ -87,18 +95,34 @@ public:
                 });
     }
 
-    for (size_t index = 0; index < entries.size(); index++) {
-      std::filesystem::directory_entry entry = entries[index];
-      std::vector<std::string> pointers =
-          index == entries.size() - 1 ? final_pointers : inner_pointers;
+    size_t index = 0;
+    auto loopLogic = [&](const std::filesystem::directory_entry &entry,
+                         size_t numberOfEntries) {
+      if (!argv.showHidden and
+          entry.path().filename().string().front() == '.') {
+        return;
+      }
+      index++;
+      std::pair<std::string, std::string> pointers =
+          index == numberOfEntries ? final_pointers : inner_pointers;
 
-      std::cout << prefix << pointers[0];
+      std::cout << prefix << pointers.first;
       if (entry.is_directory()) {
         std::cout << icons["directory"];
       } else if (entry.is_symlink()) {
         std::cout << icons["symlink"];
       } else if (entry.is_regular_file()) {
-        if (icons.find(entry.path().extension()) != icons.end()) {
+        if (entry.path().filename().string().find("readme") !=
+                std::string::npos or
+            entry.path().filename().string().find("README") !=
+                std::string::npos) {
+          std::cout << icons["readme"];
+        } else if (entry.path().filename().string().find("license") !=
+                       std::string::npos or
+                   entry.path().filename().string().find("LICENSE") !=
+                       std::string::npos) {
+          std::cout << icons["license"];
+        } else if (icons.find(entry.path().extension()) != icons.end()) {
           std::cout << icons[entry.path().extension()];
         } else {
           std::cout << icons["other"];
@@ -108,15 +132,43 @@ public:
       if (entry.is_directory()) {
         std::cout << "\033[34;1m";
       }
-      std::cout << ' ' << entry.path().filename().string();
-      std::cout << '\n';
+      std::cout << ' ' << entry.path().filename().string() << "\033[0m\n";
 
       if (!entry.is_directory()) {
         files++;
       } else {
         dirs++;
-        walk(entry.path(), prefix + pointers[1], argv);
+        walk(entry.path(), prefix + pointers.second, argv);
       }
+    };
+
+    if (argv.unsort) {
+      for (const std::filesystem::directory_entry &entry :
+           std::filesystem::directory_iterator(directory)) {
+        loopLogic(
+            entry,
+            (argv.showHidden
+                 ? std::distance(std::filesystem::directory_iterator(directory),
+                                 std::filesystem::directory_iterator())
+                 : std::count_if(
+                       std::filesystem::directory_iterator(directory),
+                       std::filesystem::directory_iterator(),
+                       [](const std::filesystem::directory_entry &e) {
+                         return e.path().filename().string().front() != '.';
+                       })));
+      }
+      return;
+    }
+
+    for (const std::filesystem::directory_entry &entry : entries) {
+      loopLogic(entry,
+                (argv.showHidden
+                     ? entries.size()
+                     : std::count_if(
+                           entries.begin(), entries.end(),
+                           [](const std::filesystem::directory_entry &e) {
+                             return e.path().filename().string().front() != '.';
+                           })));
     }
   }
 
@@ -128,9 +180,6 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-
-  constexpr char version[] = "ctree: v 0.1.0";
-
   args arg;
 
   try {
@@ -141,19 +190,10 @@ int main(int argc, char *argv[]) {
   }
 
   if (arg.version) {
-    std::cout << version << '\n';
     return 0;
   }
 
   if (arg.help) {
-    std::cout << version << '\n';
-    std::cout << "Shows a tree of files.\n";
-    std::cout << "Arguments: \n";
-    std::cout << "\t-h, --help: show this help menu\n";
-    std::cout << "\t-v, --version: show version\n";
-    std::cout << "\t-s, --show-hidden: show hidden files too\n";
-    std::cout << "\t-u, --unsort: don't sort files by name\n";
-    std::cout << "\t-m, --summary: show number of files and directories\n";
     return 0;
   }
 
