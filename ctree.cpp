@@ -98,6 +98,12 @@ private:
       {"makefile", "\033[33;1m\033[0m"},
       {".gitignore", "\033[31m\033[0m"},
       {".git", "\033[31m\033[0m"},
+      {".exe", "\033[36m\033[0m"},
+      {".bat", "\033[0m"},
+      {".ps", "\033[36m󰨊\033[0m"},
+      {".zsh", "󰘳\033[0m"},
+      {".lua", "\033[34m󰢱\033[0m"},
+      {".vimrc", "\033[32m\033[0m"},
   };
 
   size_t dirs = 0;
@@ -167,6 +173,8 @@ public:
               std::cout << icons.at("makefile");
             } else if (entry.path().filename().string() == ".gitignore") {
               std::cout << icons.at(".gitignore");
+            } else if (entry.path().filename().string() == ".vimrc") {
+              std::cout << icons.at(".vimrc");
             } else if (icons.find(entry.path().extension()) != icons.end()) {
               std::cout << icons.at(entry.path().extension());
             } else {
